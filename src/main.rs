@@ -96,11 +96,21 @@ fn main() {
                             let salt = [(ti << 4) | i1, i2, i3, i4];
                             
                             let mut mask = 0u128;
-                            for selector in &selectors {
-                                mask |= 1 << hash(&selector, &salt, selectors.len() as u64);
+                            let hashes = selectors.iter().map(|selector| {
+                                hash(&selector, &salt, selectors.len() as u64)
+                            }).collect::<Vec<u64>>();
+                            for hash in hashes.iter() {
+                                mask |= 1 << hash;
                             }
                             if mask + 1 == 1 << selectors.len() {
-                                println!("Found salt 0x{:x} in {} seconds after {}K iterations", u32::from_le_bytes(salt), first.elapsed().as_secs(), index * args_threads as u64 / 1000);
+                                println!(
+                                    "Found salt 0x{:x} in {} seconds after {}M iterations",
+                                    u32::from_le_bytes(salt),
+                                    first.elapsed().as_secs(),
+                                    (index * args_threads as u64 / 1000) as f64 / 1000.0
+                                );
+                                println!("Results {:?}", hashes);
+                                
                                 std::process::exit(0);
                             }
                         }
