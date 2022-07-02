@@ -3,6 +3,10 @@ use std::thread;
 use std::time::Instant;
 use structopt::StructOpt;
 
+uint::construct_uint! {
+	pub struct U256(4);
+}
+
 extern crate hex;
 
 #[derive(StructOpt)]
@@ -15,9 +19,9 @@ fn hash(selector: &[u8; 4], salt: &[u8; 4], m: u64) -> u64 {
     let mut hasher = Keccak::v256();
 	hasher.update(selector);
     hasher.update(salt);
-    let mut res = [0u8; 8];
+    let mut res = [0u8; 32];
     hasher.finalize(&mut res);
-    u64::from_be_bytes(res) % m
+    (U256::from(res) % U256::from(m)).as_u64()
 }
 
 fn main() {

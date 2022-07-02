@@ -11,3 +11,4 @@ rand = "0.8.5"
 tiny-keccak = { version = "2.0.0", features = ["keccak"] }
 structopt = "0.3.26"
 hex = "0.4.3"
+uint = "0.9.3"
