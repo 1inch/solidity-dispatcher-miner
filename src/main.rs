@@ -105,7 +105,7 @@ fn main() {
                             if mask + 1 == 1 << selectors.len() {
                                 println!(
                                     "Found salt 0x{:x} in {} seconds after {}M iterations",
-                                    u32::from_le_bytes(salt),
+                                    u32::from_be_bytes(salt),
                                     first.elapsed().as_secs(),
                                     (index * args_threads as u64 / 1000) as f64 / 1000.0
                                 );
