@@ -113,7 +113,13 @@ fn main() {
                                     first.elapsed().as_secs(),
                                     (index * args_threads as u64 / 1000) as f64 / 1000.0
                                 );
-                                println!("Results {:?}", hashes);
+                                println!("Results: {:?}", hashes);
+
+                                let mut lookup = U256::from(0);
+                                for i in 0..hashes.len() {
+                                    lookup = lookup | (U256::from(i) << (248 - hashes[i] * 8));
+                                }
+                                println!("Lookup: 0x{:064x}", lookup);
                                 
                                 std::process::exit(0);
                             }
