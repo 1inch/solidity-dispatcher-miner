@@ -1,4 +1,4 @@
-# solidty-dispatcher-miner
+# solidity-dispatcher-miner
 
 ### Usage
 

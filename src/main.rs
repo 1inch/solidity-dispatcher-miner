@@ -80,11 +80,11 @@ fn main() {
                     let ms = last.elapsed().as_millis() as u64;
                     if ms > 3000 {
                         println!(
-                            "Thread #{:x}: iteration {}K ({} KSalts/s) (keccak256 {} KH/s)\r",
+                            "Thread #{:x}: iteration {}M ({} KSalt/s, {} MKeccak/s)\r",
                             ti,
-                            index / 1000,
+                            (index / 1000) as f64 / 1000.0,
                             ((index - reported_index) * 1000 / (1 + ms)) as f64 / 1000.0,
-                            ((index - reported_index) * 1000 * selectors.len() as u64 / (1 + ms)) as f64 / 1000.0
+                            ((index - reported_index) * selectors.len() as u64 / (1 + ms)) as f64 / 1000.0
                         );
                         last = Instant::now();
                         reported_index = index
