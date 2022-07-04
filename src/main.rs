@@ -75,7 +75,9 @@ fn main() {
 
         handles.push(Some(thread::spawn(move || {
             let mut index = 0u64;
+            let mut keccaks = 0u64;
             let mut reported_index = 0u64;
+            let mut reported_keccak = 0u64;
             let mut last = Instant::now();
             let first = last;
             
@@ -88,10 +90,11 @@ fn main() {
                             ti,
                             (index / 1000) as f64 / 1000.0,
                             ((index - reported_index) * 1000 / (1 + ms)) as f64 / 1000.0,
-                            ((index - reported_index) * selectors.len() as u64 / (1 + ms)) as f64 / 1000.0
+                            ((keccaks - reported_keccak) / (1 + ms)) as f64 / 1000.0
                         );
                         last = Instant::now();
-                        reported_index = index
+                        reported_index = index;
+                        reported_keccak = keccaks;
                     }
                     
                     for i3 in 0..=255u8 {
@@ -100,13 +103,21 @@ fn main() {
                             let salt = [(ti << 4) | i1, i2, i3, i4];
                             
                             let mut mask = 0u128;
-                            let hashes = selectors.iter().map(|selector| {
-                                hash(&selector, &salt, selectors.len() as u64)
-                            }).collect::<Vec<u64>>();
-                            for hash in hashes.iter() {
+                            for i in 0..selectors.len() {
+                                keccaks += 1;
+                                let hash = hash(&selectors[i], &salt, selectors.len() as u64);
+                                let bit = 1u128 << hash as u128;
+                                if mask & bit != 0 {
+                                    break;
+                                }
                                 mask |= 1 << hash;
                             }
+                            
                             if mask + 1 == 1 << selectors.len() {
+                                let hashes = selectors.iter().map(|selector| {
+                                    hash(&selector, &salt, selectors.len() as u64)
+                                }).collect::<Vec<u64>>();
+    
                                 println!(
                                     "Found salt 0x{:x} in {} seconds after {}M iterations",
                                     u32::from_be_bytes(salt),
