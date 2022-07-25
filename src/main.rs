@@ -15,9 +15,10 @@ struct Args {
     threads: usize,
 }
 
-fn hash(selector: &[u8; 4], salt: &[u8; 4], m: u64) -> u64 {
+fn hash(selector: &[u8; 4], salt_byte: u8, salt: &[u8; 4], m: u64) -> u64 {
     let mut hasher = Keccak::v256();
 	hasher.update(selector);
+    hasher.update(&[salt_byte]);
     hasher.update(salt);
     let mut res = [0u8; 32];
     hasher.finalize(&mut res);
@@ -81,7 +82,7 @@ fn main() {
             let mut last = Instant::now();
             let first = last;
             
-            for i1 in 0..=15u8 {
+            for i1 in 0..=255u8 {
                 for i2 in 0..=255u8 {
                     let ms = last.elapsed().as_millis() as u64;
                     if ms > 3000 {
@@ -100,12 +101,12 @@ fn main() {
                     for i3 in 0..=255u8 {
                         for i4 in 0..=255u8 {
                             index += 1;
-                            let salt = [(ti << 4) | i1, i2, i3, i4];
+                            let salt = [i1, i2, i3, i4];
                             
                             let mut mask = 0u128;
                             for i in 0..selectors.len() {
                                 keccaks += 1;
-                                let hash = hash(&selectors[i], &salt, selectors.len() as u64);
+                                let hash = hash(&selectors[i], ti, &salt, selectors.len() as u64);
                                 let bit = 1u128 << hash as u128;
                                 if mask & bit != 0 {
                                     break;
@@ -115,11 +116,12 @@ fn main() {
                             
                             if mask + 1 == 1 << selectors.len() {
                                 let hashes = selectors.iter().map(|selector| {
-                                    hash(&selector, &salt, selectors.len() as u64)
+                                    hash(&selector, ti, &salt, selectors.len() as u64)
                                 }).collect::<Vec<u64>>();
     
                                 println!(
-                                    "Found salt 0x{:x} in {} seconds after {}M iterations",
+                                    "Found salt 0x{:02x}{:08x} in {} seconds after {}M iterations",
+                                    ti,
                                     u32::from_be_bytes(salt),
                                     first.elapsed().as_secs(),
                                     (index * args_threads as u64 / 1000) as f64 / 1000.0
