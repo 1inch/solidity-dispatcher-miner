@@ -141,19 +141,41 @@ fn main() {
                                     }).collect::<Vec<u32>>();
 
                                     println!(
-                                        "Found salt 0x{:02x}{:08x} in {} seconds after {}M iterations",
-                                        ti,
+                                        "Found salt 0x{:02x}{:08x} in {} seconds after {}M iterations for {} methods",
+                                        ti*4 + i0,
                                         u32::from_be_bytes(salt),
                                         first.elapsed().as_secs(),
-                                        (index * args_threads as u64 / 1000) as f64 / 1000.0
+                                        (index * args_threads as u64 / 1000) as f64 / 1000.0,
+                                        selectors.len()
                                     );
+
                                     println!("Results: {:?}", hashes);
 
                                     let mut lookup = U256::from(0);
                                     for i in 0..hashes.len() {
                                         lookup = lookup | (U256::from(i) << (248 - hashes[i] * 8));
                                     }
-                                    println!("Lookup: 0x{:064x}", lookup);
+                                    println!("Lookup table: 0x{:064x}", lookup);
+
+                                    if args_use_xor {
+                                        println!(
+                                            "Usage:\n    bytes32(0x{:064x})[\n        (((uint32(msg.sig) ^ 0x{:08x}) << {:02x}) | ((uint32(msg.sig) ^ 0x{:08x}) >> (32 - {:02x}))) % {:}\n    ]",
+                                            lookup,
+                                            u32::from_be_bytes(salt),
+                                            ti*4 + i0,
+                                            u32::from_be_bytes(salt),
+                                            ti*4 + i0,
+                                            selectors.len()
+                                        );
+                                    } else {
+                                        println!(
+                                            "Usage:\n    bytes32(0x{:064x})[\n        uint256(keccak256(abi.encodePacked(msg.sig, 0x{:02x}{:08x}))) % {}\n    ]",
+                                            lookup,
+                                            ti*4 + i0,
+                                            u32::from_be_bytes(salt),
+                                            selectors.len()
+                                        );
+                                    }
                                     
                                     std::process::exit(0);
                                 }
