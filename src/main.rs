@@ -94,7 +94,7 @@ fn main() {
             let mut last = Instant::now();
             let first = last;
             
-            for i0 in 1..=(32/args_threads) as u8 {
+            for i0 in 1..4u8 as u8 {
                 for i1 in 0..=255u8 {
                     for i2 in 0..=255u8 {
                         let ms = last.elapsed().as_millis() as u64;
@@ -120,9 +120,9 @@ fn main() {
                                 for i in 0..selectors.len() {
                                     keccaks += 1;
                                     let hash = if args_use_xor {
-                                        hash_xor(&selectors[i], ti*4 * i0, &salt, selectors.len() as u32)
+                                        hash_xor(&selectors[i], ti*4 + i0, &salt, selectors.len() as u32)
                                     } else {
-                                        hash_keccak256(&selectors[i], ti*4 * i0, &salt, selectors.len() as u32)
+                                        hash_keccak256(&selectors[i], ti*4 + i0, &salt, selectors.len() as u32)
                                     };
                                     let bit = 1u128 << hash as u128;
                                     if mask & bit != 0 {
@@ -134,9 +134,9 @@ fn main() {
                                 if mask + 1 == 1 << selectors.len() {
                                     let hashes = selectors.iter().map(|selector| {
                                         if args_use_xor {
-                                            hash_xor(&selector, ti*4 * i0, &salt, selectors.len() as u32)
+                                            hash_xor(&selector, ti*4 + i0, &salt, selectors.len() as u32)
                                         } else {
-                                            hash_keccak256(&selector, ti*4 * i0, &salt, selectors.len() as u32)
+                                            hash_keccak256(&selector, ti*4 + i0, &salt, selectors.len() as u32)
                                         }
                                     }).collect::<Vec<u32>>();
 
@@ -157,24 +157,15 @@ fn main() {
                                     }
                                     println!("Lookup table: 0x{:064x}", lookup);
 
+                                    println!("Usage:");
                                     if args_use_xor {
-                                        println!(
-                                            "Usage:\n    bytes32(0x{:064x})[\n        (((uint32(msg.sig) ^ 0x{:08x}) << {:02x}) | ((uint32(msg.sig) ^ 0x{:08x}) >> (32 - {:02x}))) % {:}\n    ]",
-                                            lookup,
-                                            u32::from_be_bytes(salt),
-                                            ti*4 + i0,
-                                            u32::from_be_bytes(salt),
-                                            ti*4 + i0,
-                                            selectors.len()
-                                        );
+                                        println!("    uint256 index = uint8(bytes32(0x{:064x})[", lookup);
+                                        println!("        (((uint32(msg.sig) ^ 0x{:08x}) << {}) | ((uint32(msg.sig) ^ 0x{:08x}) >> (32 - {}))) % {}", u32::from_be_bytes(salt), ti*4 + i0, u32::from_be_bytes(salt), ti*4 + i0, selectors.len());
+                                        println!("    ]);");
                                     } else {
-                                        println!(
-                                            "Usage:\n    bytes32(0x{:064x})[\n        uint256(keccak256(abi.encodePacked(msg.sig, 0x{:02x}{:08x}))) % {}\n    ]",
-                                            lookup,
-                                            ti*4 + i0,
-                                            u32::from_be_bytes(salt),
-                                            selectors.len()
-                                        );
+                                        println!("    uint256 index = uint8(bytes32(0x{:064x})[", lookup);
+                                        println!("        uint256(keccak256(abi.encodePacked(msg.sig, bytes5(0x{:02x}{:08x})))) % {}", ti*4 + i0, u32::from_be_bytes(salt), selectors.len());
+                                        println!("    ]);");
                                     }
                                     
                                     std::process::exit(0);
